@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Test script to verify ESG Recommender setup
-"""
-
 import requests
 import json
 

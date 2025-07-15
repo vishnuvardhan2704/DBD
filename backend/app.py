@@ -1,18 +1,67 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import os
+import logging
+from functools import wraps
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Import database and business logic modules
 from db import init_db, get_all_products, get_user_by_name, get_user_by_id, add_to_cart, get_cart, clear_cart, update_user_points, get_product_by_id
 from recommender import find_greener_alternative, estimate_carbon_savings
 from gemini import get_gemini_reason
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
+# Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-for-development')
+app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'true').lower() == 'true'
+
+# Configure CORS
+CORS(app, resources={r"/api/*": {"origins": os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')}})
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+print("✅ ESG Recommender Backend initialized successfully")
 
 # Initialize database
 init_db()
+
+def handle_errors(f):
+    """Decorator for consistent error handling"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error in {f.__name__}: {str(e)}")
+            return jsonify({'error': 'Internal server error'}), 500
+    return decorated_function
+
+# Input validation helpers
+def validate_json_data(data, required_fields):
+    """Validate JSON request data"""
+    if not data:
+        return False, 'Missing JSON body'
+    
+    for field in required_fields:
+        if field not in data or data[field] is None:
+            return False, f'Missing required field: {field}'
+    
+    return True, 'Valid'
+
+def validate_positive_integer(value, field_name):
+    """Validate positive integer values"""
+    try:
+        val = int(value)
+        if val <= 0:
+            return False, f'{field_name} must be positive'
+        return True, val
+    except (ValueError, TypeError):
+        return False, f'{field_name} must be a valid integer'
 
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -40,21 +89,22 @@ def get_user_cart(user_id):
 @app.route('/api/cart', methods=['POST'])
 def add_item_to_cart():
     data = request.get_json()
-    if not data:
-        return jsonify({'error': 'Missing JSON body'}), 400
-    user_id = data.get('user_id')
-    product_id = data.get('product_id')
+    is_valid, msg = validate_json_data(data, ['user_id', 'product_id'])
+    if not is_valid:
+        return jsonify({'error': msg}), 400
+
+    user_id = data['user_id']
+    product_id = data['product_id']
     quantity = data.get('quantity', 1)
-    if not user_id or not product_id:
-        return jsonify({'error': 'user_id and product_id required'}), 400
+
+    is_valid, quantity = validate_positive_integer(quantity, 'Quantity')
+    if not is_valid:
+        return jsonify({'error': quantity}), 400
+
     if not get_user_by_id(user_id):
         return jsonify({'error': 'User not found'}), 404
     if not get_product_by_id(product_id):
         return jsonify({'error': 'Product not found'}), 404
-    try:
-        quantity = int(quantity)
-    except Exception:
-        return jsonify({'error': 'Quantity must be an integer'}), 400
     ok, msg = add_to_cart(user_id, product_id, quantity)
     if not ok:
         return jsonify({'error': msg}), 400
@@ -84,7 +134,7 @@ def get_recommendation():
         'alternative': alternative,
         'reason': reason,
         'carbon_saved': carbon_saved,
-        'points_awarded': int(carbon_saved * 10)
+        'points_awarded': int(carbon_saved * float(os.getenv('CARBON_POINTS_MULTIPLIER', '10.0')))
     })
 
 @app.route('/api/points/<int:user_id>', methods=['PUT'])
@@ -116,4 +166,11 @@ def gemini_test():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    debug_mode = app.config.get('DEBUG', True)
+    
+    print("🚀 Starting ESG Recommender Backend...")
+    print(f"🌐 Debug mode: {debug_mode}")
+    print(f"📍 Server will be available at: http://localhost:5000")
+    print(f"🔗 API endpoints: http://localhost:5000/api/")
+    
+    app.run(debug=debug_mode, port=5000, host='127.0.0.1')
