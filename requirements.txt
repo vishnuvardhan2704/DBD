@@ -1,2 +1,0 @@
-# This file tells Heroku to install backend dependencies
--r backend/requirements.txt
