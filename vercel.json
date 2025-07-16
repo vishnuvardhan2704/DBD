@@ -1,9 +1,11 @@
 {
   "version": 2,
   "name": "esg-recommender",
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "frontend/build",
   "functions": {
     "api/app.py": {
-      "runtime": "python3.9"
+      "runtime": "@vercel/python"
     }
   },
   "routes": [

@@ -190,9 +190,12 @@ ESG Score = (
 ```json
 {
   "version": 2,
+  "name": "esg-recommender",
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "frontend/build",
   "functions": {
     "api/app.py": {
-      "runtime": "python3.9"
+      "runtime": "@vercel/python"
     }
   },
   "routes": [
@@ -243,13 +246,19 @@ npm start
 
 ### **2. Deploy to Vercel:**
 ```bash
-# Option 1: GitHub Integration (Recommended)
-1. Push code to GitHub: git push origin main
-2. Go to vercel.com and sign in with GitHub
-3. Import your repository
-4. Click Deploy - Done!
+# Step 1: Commit and push your changes
+git add .
+git commit -m "Fix Vercel deployment configuration"
+git push origin main
 
-# Option 2: Direct Deploy
+# Step 2: Deploy via GitHub (Recommended)
+1. Go to vercel.com and sign in with GitHub
+2. Click "New Project"
+3. Import your "DBD" repository
+4. Vercel will auto-detect the configuration
+5. Click "Deploy" - Done!
+
+# Alternative: Direct Deploy with CLI
 npm install -g vercel
 vercel --prod
 ```
