@@ -189,25 +189,46 @@ ESG Score = (
 ### **Vercel Configuration:**
 ```json
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
-  "functions": {
-    "api/app.py": {
-      "runtime": "@vercel/python"
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    },
+    {
+      "src": "api/*.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/app.py"
     },
     {
+      "src": "/static/(.*)",
+      "dest": "/frontend/static/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|ico|json))",
+      "dest": "/frontend/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/frontend/index.html"
     }
   ]
 }
 ```
+
+### **Important Deployment Settings:**
+When deploying to Vercel, make sure to:
+1. **Leave Build Command EMPTY** (let Vercel auto-detect from frontend/package.json)
+2. **Leave Output Directory EMPTY** (Vercel will use frontend/build automatically)
+3. **Leave Install Command as default** (npm install)
 
 ### **Build Process:**
 1. **Frontend Build**: React app compiled to static files
@@ -246,20 +267,28 @@ npm start
 ```bash
 # Step 1: Commit and push your changes
 git add .
-git commit -m "Fix Vercel deployment configuration"
+git commit -m "Fix Vercel configuration for proper routing"
 git push origin main
 
 # Step 2: Deploy via GitHub (Recommended)
 1. Go to vercel.com and sign in with GitHub
 2. Click "New Project"
 3. Import your "DBD" repository
-4. Vercel will auto-detect the configuration
-5. Click "Deploy" - Done!
+4. IMPORTANT: In deployment settings:
+   - Build Command: LEAVE EMPTY
+   - Output Directory: LEAVE EMPTY
+   - Install Command: LEAVE EMPTY (or npm install)
+5. Click "Deploy"
 
-# Alternative: Direct Deploy with CLI
-npm install -g vercel
-vercel --prod
+# Alternative: Delete old project and redeploy if issues persist
 ```
+
+### **🔧 Troubleshooting Deployment:**
+If you're still getting 404 errors:
+1. **Delete the old Vercel project** completely
+2. **Import the repository again** as a fresh project
+3. **Don't override any build settings** - let Vercel auto-detect
+4. The `vercel.json` file will handle all configuration
 
 ### **3. Environment Variables (Optional):**
 In Vercel Dashboard → Settings → Environment Variables:
