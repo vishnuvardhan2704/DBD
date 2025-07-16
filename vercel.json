@@ -1,17 +1,15 @@
 {
   "version": 2,
   "name": "esg-recommender",
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
   "functions": {
-    "api/*.py": {
+    "api/app.py": {
       "runtime": "python3.9"
     }
   },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/api/app.py"
     },
     {
       "src": "/(.*)",

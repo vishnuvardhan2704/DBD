@@ -18,11 +18,10 @@
   },
   "scripts": {
     "dev": "cd frontend && npm start",
+    "build": "cd frontend && npm install && npm run build",
     "start": "cd frontend && npm start",
-    "build": "cd frontend && npm run build",
     "test": "cd frontend && npm test",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "postinstall": "cd frontend && npm install",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
