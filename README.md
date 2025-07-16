@@ -190,14 +190,19 @@ ESG Score = (
 ```json
 {
   "version": 2,
-  "name": "esg-recommender",
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "frontend/build",
-  "functions": {
-    "api/app.py": {
-      "runtime": "@vercel/python"
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    },
+    {
+      "src": "api/app.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -205,7 +210,7 @@ ESG Score = (
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/build/$1"
+      "dest": "/frontend/$1"
     }
   ]
 }
