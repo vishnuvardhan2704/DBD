@@ -189,46 +189,31 @@ ESG Score = (
 ### **Vercel Configuration:**
 ```json
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    },
-    {
-      "src": "api/*.py",
-      "use": "@vercel/python"
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/build",
+  "functions": {
+    "api/app.py": {
+      "runtime": "@vercel/python"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/app.py"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/frontend/static/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|ico|json))",
-      "dest": "/frontend/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/frontend/index.html"
+      "dest": "/$1"
     }
   ]
 }
 ```
 
 ### **Important Deployment Settings:**
-When deploying to Vercel, make sure to:
-1. **Leave Build Command EMPTY** (let Vercel auto-detect from frontend/package.json)
-2. **Leave Output Directory EMPTY** (Vercel will use frontend/build automatically)
-3. **Leave Install Command as default** (npm install)
+When deploying to Vercel:
+1. **Let the vercel.json handle everything** - don't override settings
+2. **Delete old project and create new one** if issues persist
+3. **Build succeeds but 404s mean routing issues** - this config should fix it
 
 ### **Build Process:**
 1. **Frontend Build**: React app compiled to static files
@@ -264,24 +249,35 @@ npm start
 ```
 
 ### **2. Deploy to Vercel:**
+
+**Important**: The `vercel.json` configuration is now optimized. Follow these steps exactly:
+
 ```bash
 # Step 1: Commit and push your changes
 git add .
-git commit -m "Fix Vercel configuration for proper routing"
+git commit -m "Deploy ESG Recommender with fixed configuration"
 git push origin main
-
-# Step 2: Deploy via GitHub (Recommended)
-1. Go to vercel.com and sign in with GitHub
-2. Click "New Project"
-3. Import your "DBD" repository
-4. IMPORTANT: In deployment settings:
-   - Build Command: LEAVE EMPTY
-   - Output Directory: LEAVE EMPTY
-   - Install Command: LEAVE EMPTY (or npm install)
-5. Click "Deploy"
-
-# Alternative: Delete old project and redeploy if issues persist
 ```
+
+**Step 2: Deploy via GitHub:**
+1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+2. Click "New Project" and import your repository
+3. **DO NOT** modify any build settings - let Vercel use the `vercel.json` configuration
+4. Click "Deploy"
+
+**Step 3: Set Environment Variables** (optional, for AI features):
+- In Vercel dashboard, go to Project Settings > Environment Variables
+- Add `GEMINI_API_KEY` with your Google Gemini API key
+
+**Step 4: Test Your Deployment:**
+- Frontend: `https://your-app.vercel.app/`
+- Backend Health Check: `https://your-app.vercel.app/api/health`
+- API Example: `https://your-app.vercel.app/api/products`
+
+**Troubleshooting:**
+- If you get 404 errors, delete the old Vercel project and create a new one
+- Check build logs in Vercel dashboard for errors
+- Ensure both `api/` and `frontend/` folders exist in your repository
 
 ### **🔧 Troubleshooting Deployment:**
 If you're still getting 404 errors:
