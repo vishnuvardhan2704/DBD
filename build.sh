@@ -5,24 +5,30 @@ set -e  # Exit on any error
 
 echo "🚀 Starting Render.com deployment..."
 
-# Ensure we're in the correct directory
-cd "$(dirname "$0")"
-
 # Build frontend
 echo "📦 Building frontend..."
 cd frontend
-npm ci --only=production
+
+# Install frontend dependencies
+echo "� Installing frontend dependencies..."
+npm ci
+
+# Build the React app
+echo "🏗️ Building React app..."
 npm run build
 
 # Move built files to api/static for serving
-echo "📁 Moving build files..."
+echo "📁 Moving build files to api/static..."
 cd ..
 mkdir -p api/static
 cp -r frontend/build/* api/static/
 
+# Verify files were copied
+echo "📋 Verifying static files..."
+ls -la api/static/
+
 # Install backend dependencies
 echo "🐍 Installing backend dependencies..."
-cd api
 pip install --no-cache-dir -r requirements.txt
 
 echo "✅ Build complete!"
