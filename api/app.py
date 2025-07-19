@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import os
 import logging
@@ -14,9 +14,9 @@ from recommender import find_greener_alternative, estimate_carbon_savings
 from gemini import get_gemini_reason
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-for-development')
-app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'true').lower() == 'true'
+app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 
 # Configure CORS
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -54,6 +54,37 @@ def validate_json_data(data, required_fields):
     return True, None
 
 # --- API Routes ---
+
+@app.route('/', methods=['GET'])
+@handle_errors
+def serve_frontend():
+    """Serve the React frontend"""
+    return send_file('static/index.html')
+
+@app.route('/api/', methods=['GET'])
+@handle_errors
+def api_root():
+    """API root endpoint"""
+    return jsonify({
+        'message': 'ESG Recommender API', 
+        'status': 'running',
+        'endpoints': {
+            'health': '/api/health',
+            'products': '/api/products',
+            'cart': '/api/cart',
+            'recommendation': '/api/recommendation'
+        }
+    })
+
+# Frontend routes (catch-all for React Router)
+@app.route('/<path:path>')
+def serve_frontend_routes(path):
+    """Serve frontend routes for React Router"""
+    # Check if it's a static file
+    if '.' in path and path.split('.')[-1] in ['js', 'css', 'png', 'jpg', 'ico', 'svg']:
+        return send_from_directory('static', path)
+    # Otherwise serve the React app
+    return send_file('static/index.html')
 
 @app.route('/api/health', methods=['GET'])
 @handle_errors
@@ -164,10 +195,8 @@ def get_recommendation():
 
 # --- Run Application ---
 
-# For Vercel
-app_handler = app
-
-# For local development
+# For Render.com and production
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug = os.environ.get('FLASK_ENV', 'production') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)
